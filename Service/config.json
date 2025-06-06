@@ -1,0 +1,32 @@
+{
+    "Detection_Model_Parameters": {
+        "model_loading":{
+            "detection_model": "yolo11x.pt",
+            "depth_model": "depth_anything_v2_vits.pth"    
+        },
+        "image_processing": {
+            "image_height": 1000,
+            "image_width": 1500,
+            "normalize_alpha": 0,
+            "normalize_beta": 255
+        },
+        "image_vicinity": {
+            "vicinity_percentage": 30,
+            "vicinity_angle": 45
+        },
+        "other_parameters":{
+            "yolo_model_confidence": 0.5
+        }
+        
+    },
+    "Guidance_model": {
+        "llm_model" : "qwen2.5:14b",
+        "base_url": "http://192.168.1.102:11434"
+    },
+    "model_service": {
+        "mode": "ZH",
+        "file_suffix": ".jpg",
+        "file_directory": "assets/Images",
+        "file_prefix": "Output"
+    }
+}

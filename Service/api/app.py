@@ -18,9 +18,7 @@ async def detect_objects(
 ):
     try:
         image_bytes = await file.read()
-        obstacles = image_processing(image_bytes)
-        print(f'The type is:{type(obstacles.resized_image)}')
-        
+        obstacles = image_processing(image_bytes)        
         return JSONResponse(content={
             "audio": obstacles.audio_bytes, 
             'text_command': obstacles.answer, 

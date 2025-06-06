@@ -50,7 +50,11 @@ Icon?
 .cache/
 
 beijing/
-Models/
+!Models
+Models/detection_models/
+Models/Depth-Anything-V2/
+Models/Depth-Anything-V2-Small
+Models/ml-depth-pro
 
 
 !.vscode/launch.json

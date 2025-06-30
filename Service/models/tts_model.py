@@ -37,7 +37,7 @@ class TTS(BaseTTS):
                 audio_bytes = f.read()
             audio_bytes_64 = base64.b64encode(audio_bytes).decode('utf-8')
 
-            return audio_bytes_64
+            return audio_bytes_64, audio_bytes
             
         except Exception as e:
             print(f"Error: {e}")

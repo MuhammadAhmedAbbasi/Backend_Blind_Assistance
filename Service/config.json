@@ -15,7 +15,7 @@
             "vicinity_angle": 45
         },
         "other_parameters":{
-            "yolo_model_confidence": 0.5
+            "yolo_model_confidence": 0.2
         }
         
     },

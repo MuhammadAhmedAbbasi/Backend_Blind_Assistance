@@ -2,10 +2,10 @@ Blind person assistance
 
 Steps to Run The Code 
 
-Step 1:
+**Step 1:**
 git clone https://github.com/MuhammadAhmedAbbasi/Backend_Blind_Assistance.git
 
-Step 2:
+**Step 2:**
 
 
 Download The requirements by typing below:
@@ -32,7 +32,7 @@ After the environment is activated then write below command to install all libra
 pip install -r requirements.txt
 
 
-Step 3:
+**Step 3:**
 
 Now to download Depth Anything, follow the below GITHUB 
 
@@ -54,28 +54,32 @@ Start the Ollama service
 Download qwen2.5:14b by write following command in CMD 
 ollama pull qwen2.5:14b
 
-Step 4:
+**Step 4:**
 
 Now There is file name "config.json
+
 ![alt text](image-2.png)
 
 Open this file, and go the "Guidance_Model" and "base_url" and change the IP from 192.168.... to localhost.
 
 From This :
+
 ![alt text](image-3.png)
 
 To:
+
 ![alt text](image-4.png)
 
 Note: The config.json file basically contain all the important parameters of project, if user want to change it, it can do accordingly without going to the code.
 
 
-Step 5:
+**Step 5:**
 Now we have to run the main.py
 
 1. Go to Service folder and right click on main.py and copy path (absolute path)
 
 2. Go to the terminal: write  python + (Your absolute path )
+   
 ![alt text](image-5.png)
 
 

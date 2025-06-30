@@ -37,13 +37,14 @@ def image_processing(image_bytes: bytes) -> ImageProcessingReturn:
         raise ValueError("Invalid mode selected. Choose 'ZN' or 'EN'.")
 
     guidance_result = model.invoke(inside_vicinity, outside_vicinity)
+    print(f"The guidance is: {guidance_result}")
     
-    guidance_audio_bytes = tts_model.text_to_speech_and_show_bytes(guidance_result, mode = mode)
+    guidance_audio_bytes_base64, guidanece_model_bytes = tts_model.text_to_speech_and_show_bytes(guidance_result, mode = mode)
     
     return ImageProcessingReturn(
-        audio_bytes=guidance_audio_bytes,
+        audio_bytes=guidance_audio_bytes_base64,
         answer=guidance_result,
         imp_image_info=inside_vicinity,
         other_image_info=outside_vicinity,
         resized_image=resized_image_base64
-    )
+    ), guidanece_model_bytes, encoded_image

@@ -61,7 +61,6 @@ class GuidanceModelChinese(BaseGuidanceModel):
     def invoke(self, vicinity_scene, outside_scene):
         self.imp_scene_description, self.extr_scene_description = self.generate_scene_description(vicinity_scene, outside_scene)
         self.scene_description = f"近处物体: {self.imp_scene_description}"
-        print(*f'self.scene_description: {self.scene_description}, self.imp_scene_description : {self.imp_scene_description}, self.extr_scene_description : {self.extr_scene_description}')
         
         prompt = ChatPromptTemplate.from_template(self.chinese_template)
         chain = prompt | self.model

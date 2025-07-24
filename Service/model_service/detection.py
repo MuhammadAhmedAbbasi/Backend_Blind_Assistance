@@ -4,6 +4,7 @@ import os
 from Service.models.detection_model import DetectionLogic
 from Service.models.guidance_model_chinese import GuidanceModelChinese
 from Service.models.guidance_model_english import GuidanceModelEnglish
+from Service.models.new_tts import TextToAudio
 from Service.models.tts_model import TTS
 import base64
 from Service.common.save_image import save_image
@@ -15,6 +16,7 @@ detection_model = DetectionLogic()
 guidance_model_chinese = GuidanceModelChinese()
 guidance_model_english = GuidanceModelEnglish()
 tts_model = TTS()
+#tts_model = TextToAudio()
 
 
 def image_processing(image_bytes: bytes) -> ImageProcessingReturn:
@@ -37,13 +39,12 @@ def image_processing(image_bytes: bytes) -> ImageProcessingReturn:
         raise ValueError("Invalid mode selected. Choose 'ZN' or 'EN'.")
 
     guidance_result = model.invoke(inside_vicinity, outside_vicinity)
-    
-    guidance_audio_bytes = tts_model.text_to_speech_and_show_bytes(guidance_result, mode = mode)
+    guidance_audio_bytes_base64, guidanece_model_bytes = tts_model.text_to_speech_and_show_bytes(guidance_result, mode = mode)
     
     return ImageProcessingReturn(
-        audio_bytes=guidance_audio_bytes,
+        audio_bytes=guidance_audio_bytes_base64,
         answer=guidance_result,
         imp_image_info=inside_vicinity,
         other_image_info=outside_vicinity,
         resized_image=resized_image_base64
-    )
+    ), guidanece_model_bytes, encoded_image

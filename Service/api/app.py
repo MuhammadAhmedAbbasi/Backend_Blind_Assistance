@@ -18,7 +18,7 @@ async def detect_objects(
 ):
     try:
         image_bytes = await file.read()
-        obstacles,_,_ = image_processing(image_bytes) 
+        obstacles,_,_ = image_processing(image_bytes)        
         return JSONResponse(content={
             "audio": obstacles.audio_bytes, 
             'text_command': obstacles.answer, 

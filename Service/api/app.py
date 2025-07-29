@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 import cv2
 import numpy as np
 from fastapi import APIRouter
-from Service.model_service.detection import image_processing
+from Service.model_service.detection_new import blind_algo
 from pydantic import BaseModel
 from typing import Optional
 router = APIRouter(
@@ -18,7 +18,7 @@ async def detect_objects(
 ):
     try:
         image_bytes = await file.read()
-        obstacles,_,_ = image_processing(image_bytes)        
+        obstacles,_,_ = await blind_algo.image_processing(image_bytes)        
         return JSONResponse(content={
             "audio": obstacles.audio_bytes, 
             'text_command': obstacles.answer, 

@@ -63,3 +63,4 @@ Algorithm/training/
 *.xlsx
 *.pkl
 *.jpg
+*.pt

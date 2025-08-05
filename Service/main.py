@@ -13,7 +13,7 @@ app = create_app()
 register_router(app)
 
 async def websocket_api():
-    async with serve(blind_glasses_handler, '0.0.0.0', 8000):
+    async with serve(blind_glasses_handler, '0.0.0.0', 8000,max_size=None):
         await asyncio.Future()
 
 async def start_fastapi_service():

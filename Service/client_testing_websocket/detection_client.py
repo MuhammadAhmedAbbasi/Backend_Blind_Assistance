@@ -18,7 +18,7 @@ async def send_image_to_websocket(image_path: str):
             # Prepare JSON message
             message = {
                 "image": image_base64,
-                "mode": "Drug_detection"  # replace or remove as needed
+                "mode": "detection"  # replace or remove as needed
             }
 
             # Send JSON as text
@@ -34,4 +34,4 @@ async def send_image_to_websocket(image_path: str):
             else:
                 print(f"Received response:")
 if __name__ == "__main__":
-    asyncio.run(send_image_to_websocket(r"D:\backend_algorithm_blind_person_guidance\Algorithm\training\new_data\images\medicin_2\Screenshot_20250729150144.png"))
+    asyncio.run(send_image_to_websocket(r"D:\backend_algorithm_blind_person_guidance\examples\example_2.jpg"))

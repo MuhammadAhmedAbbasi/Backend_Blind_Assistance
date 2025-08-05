@@ -28,5 +28,9 @@
         "file_suffix": ".jpg",
         "file_directory": "assets/Images",
         "file_prefix": "Output"
+    },
+    "glasses_mode":{
+        "blind_guidance_mode": "detection",
+        "drug_detection_mode": "Drug_detection"
     }
 }

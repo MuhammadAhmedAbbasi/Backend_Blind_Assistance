@@ -7,3 +7,5 @@ class ImageProcessingReturn(BaseModel):
     imp_image_info: Optional[list] = None
     other_image_info: Optional[list] = None
     resized_image: Optional[str] = None 
+    medicine_info: Optional[str] = None
+    mode_selection: Optional[str] = None

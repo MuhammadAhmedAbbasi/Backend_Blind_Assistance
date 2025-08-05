@@ -14,6 +14,7 @@ config = load_config()
 detection_model_params = config["Detection_Model_Parameters"]
 guidance_model = config['Guidance_model']
 model_service = config['model_service']
+glasses_mode_detection = config['glasses_mode']
 
 # Model Loading
 detection_model = detection_model_params["model_loading"]["detection_model"]
@@ -32,6 +33,10 @@ vicinity_angle = detection_model_params["image_vicinity"]["vicinity_angle"]
 
 # Other Parameters
 yolo_model_confidence = detection_model_params["other_parameters"]["yolo_model_confidence"]
+
+# Glasses Mode Selection
+blind_guidance_mode = glasses_mode_detection["blind_guidance_mode"]
+drug_detection_mode = glasses_mode_detection["drug_detection_mode"]
 
 # URL LOADING
 base_url = guidance_model['base_url']

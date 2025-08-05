@@ -50,11 +50,17 @@ Icon?
 .cache/
 
 beijing/
+beijing_env/
+runs/
 assets/Images/
-Models/
+Models/Depth-Anything-V2-Small/
+Models/Depth-Anything-V2/
+Models/detection_models/yolo11x.pt
+Algorithm/training/
 
 !.vscode/launch.json
 
 *.xlsx
 *.pkl
 *.jpg
+*.pt

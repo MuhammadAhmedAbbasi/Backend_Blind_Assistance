@@ -1,9 +1,34 @@
 from Service.model_service.detection_new import BlindDetection
 import json
 import base64
+import websockets
+import asyncio
+
+HEARTBEAT_INTERVAL = 5
+
+async def send_heartbeat(websocket):
+    while True:
+        try:
+            heartbeat_message = {
+            "audio": None, 
+            'text_command': None, 
+            'imp_image_info': None, 
+            'other_image_info': None,
+            'resized_image': None,
+            'mode_selection': None,
+            'medicine_info': None}
+            message = json.dumps(heartbeat_message)
+            await websocket.send(message)
+            print("heartbeat sent")
+
+        except websockets.exceptions.ConnectionClosed:
+            print("Connection closed.")
+            break
+        await asyncio.sleep(HEARTBEAT_INTERVAL)
 
 async def blind_glasses_handler(websocket):
     blind_guidance_model = BlindDetection()
+    #asyncio.create_task(send_heartbeat(websocket))
 
     async for data in websocket:
         try:

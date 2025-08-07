@@ -36,15 +36,13 @@ class MedicineModelChinese():
         药品名称：{medicine}
         药品详情：{details}
 
-        请将这些信息整理成自然流畅的一段话，完整覆盖药品的主要成分、作用、用途、使用方法、注意事项等。不要加标题，不要有任何开场白或客套话，只需像一个语音助手一样，直接陈述内容，语言要准确、简洁、通顺。
+        请将这些信息整理成自然流畅的一段话，完整覆盖药品的主要成分、作用、用途、使用方法、注意事项等。不要加标题，不要有任何开场白或客套话，只需像一个语音助手一样，直接陈述内容，语言要准确、简洁、通顺，尽量简短一点最好控制在一小句内容。
         """
 
         prompt = ChatPromptTemplate.from_template(chinese_template)
         return prompt
     def invoke(self, medicine_name):
         context = self.inquire_medicine(medicine_name)
-        print(context)
-        print(medicine_name)
 
         
         chain = self.prompt | self.model

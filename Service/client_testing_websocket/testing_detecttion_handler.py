@@ -4,7 +4,7 @@ import json
 import base64
 
 async def send_image_to_websocket(image_path: str):
-    uri = "ws://192.168.0.126:8000"  # Match the server's WebSocket port
+    uri = "ws://localhost:8765"  # Match the server's WebSocket port
 
     async with websockets.connect(uri,max_size=2*1024*1024) as websocket:
         while True:
@@ -26,12 +26,6 @@ async def send_image_to_websocket(image_path: str):
 
             # Receive response
             response = await websocket.recv()
-            parsed = json.loads(response)
-
-            # Process response
-            if "error" in parsed:
-                print(f"Server error: {parsed['error']}")
-            else:
-                print(f"Received response:")
+            print(f"Received response:")
 if __name__ == "__main__":
-    asyncio.run(send_image_to_websocket(r"D:\backend_algorithm_blind_person_guidance\Algorithm\training\new_data\images\medicin_2\Screenshot_20250729150144.png"))
+    asyncio.run(send_image_to_websocket(r"D:\backend_algorithm_blind_person_guidance\Algorithm\training\new_data\images\medicine_1\Screenshot_20250729144720.png"))

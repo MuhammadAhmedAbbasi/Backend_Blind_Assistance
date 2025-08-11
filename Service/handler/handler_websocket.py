@@ -7,6 +7,7 @@ import os
 from datetime import datetime
 import logging
 from collections import defaultdict, deque
+import time
 
 # Configure logging
 logging.basicConfig(
@@ -80,6 +81,7 @@ async def blind_glasses_handler(websocket):
         async for data in websocket:
             try:
                 message = json.loads(data)
+                whole_start_time = time.time()
                 logger.info(f"Received message from {websocket.remote_address}")
                 logger.info(f'The client id is {client_id}')
 
@@ -93,16 +95,12 @@ async def blind_glasses_handler(websocket):
                 logger.info(f"Total messages in clients are: {len(client_queues[client_id])}")
                 last_mode = client_queues[client_id][-2].get("mode", "default")
                 current_mode = client_queues[client_id][-1].get("mode", "default")
-                logger.info(f'The current and previous mode are: {current_mode}, {last_mode}')
                 if last_mode != current_mode:
                     # Clear queue except last message
                     last_msg = client_queues[client_id].pop()
                     client_queues[client_id].clear()
                     logger.info(f'After clearing the length of queue is : {len(client_queues[client_id])}')
                     client_queues[client_id].append(last_msg)
-
-                logger.info(f"Raw message queued for client {client_id} (queue length: {len(client_queues[client_id])})")
-                logger.info(f"The message count {count} is sent")
 
                 # Process the oldest message (this removes it from the queue)
                 raw_message = client_queues[client_id].popleft()
@@ -117,13 +115,14 @@ async def blind_glasses_handler(websocket):
 
                 image_bytes = base64.b64decode(image_base64)
                 raw_mode = raw_message.get("mode", "default")
-
+                start_time = time.time()
                 # Process image using the model
                 obstacles = await blind_guidance_model.image_processing(
                     image_bytes,
                     glasses_mode=raw_mode
                 )
-
+                end_time = time.time() - start_time
+                logger.info(f'The time taken for response is: {end_time}')
                 # Prepare response
                 response = {
                     "audio": obstacles.audio_bytes,
@@ -135,10 +134,6 @@ async def blind_glasses_handler(websocket):
                     'medicine_info': obstacles.medicine_info
                 }
 
-                logger.info(f'Medicine info: {obstacles.medicine_info}')
-                logger.info(f'Text command: {obstacles.answer}')
-                logger.info(f'Important image info: {obstacles.imp_image_info}')
-                logger.info(f'Current info sent is (mode info): {obstacles.mode_selection}')
                 if obstacles.audio_bytes is not None:
                     logger.info(f'The audio check: {obstacles.audio_bytes[:10]}')
                 else:
@@ -146,7 +141,6 @@ async def blind_glasses_handler(websocket):
 
   
                 count += 1
-
                 # save_response_to_file(response)
                 await websocket.send(json.dumps(response))
                 logger.info("Response sent to client")

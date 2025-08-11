@@ -23,11 +23,13 @@ class IntelligentDrugDetection:
 
                     您需要从中选择的原药品名称如下：
 
-                    1. 复方丹参滴丸
-                    2. 复方氨酚烷胺片
-                    3. 感冒灵胶囊
-                    4. 正天丸
-                    5.连花清瘟胶囊
+                    1. 藿香正气水
+                    2. 感冒灵胶囊
+                    3. 风油精
+                    4. 布洛芬缓释胶囊
+                    5. 复方薄荷脑软膏
+                    6. 莲花清瘟胶囊
+                    7. 复方氨酚烷胺片
 
                     如果该名称与上述名称完全不匹配，请给出以下名称：
                     6. 无匹配项
@@ -49,5 +51,5 @@ class IntelligentDrugDetection:
         detection = self.OCR_detection(image_bytes)
         res = self.prompt | self.correction_model
         answer = res.invoke({'input': detection}).medicine_name
-        return answer
+        return answer, detection
         

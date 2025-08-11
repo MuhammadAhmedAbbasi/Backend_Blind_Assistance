@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 class ImageProcessingReturn(BaseModel):
     audio_bytes: Optional[str] = None
@@ -9,3 +9,5 @@ class ImageProcessingReturn(BaseModel):
     resized_image: Optional[str] = None 
     medicine_info: Optional[str] = None
     mode_selection: Optional[str] = None
+    ocr_detection: List[str] = None
+    medicine_name: Optional[str] = None

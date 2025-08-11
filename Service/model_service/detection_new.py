@@ -43,7 +43,7 @@ class BlindDetection:
             if not model:
                 raise ValueError("Invalid mode selected. Choose 'ZN' or 'EN'.")
 
-            guidance_result = model.invoke(inside_vicinity, outside_vicinity)
+            guidance_result  = model.invoke(inside_vicinity, outside_vicinity)
             guidance_audio_bytes_base64, guidanece_model_bytes = self.tts_model.text_to_speech_and_show_bytes(guidance_result)
             return ImageProcessingReturn(
                 audio_bytes = guidance_audio_bytes_base64,
@@ -57,7 +57,7 @@ class BlindDetection:
         
 
         elif glasses_mode == drug_detection_mode:
-            medicine_name =  self.intelli.invoke(img)
+            medicine_name, ocr_detection =  self.intelli.invoke(img)
             if medicine_name == '无匹配项':
                 medicine_info = '所给药物不在数据库中'
             elif medicine_name == '未检测到任何东西':
@@ -68,7 +68,9 @@ class BlindDetection:
             return ImageProcessingReturn(
                 audio_bytes = medicine_audio_bytes_base64,
                 mode_selection = glasses_mode,
-                medicine_info = medicine_info)
+                medicine_info = medicine_info,
+                ocr_detection = ocr_detection,
+                medicine_name =  medicine_name)
         
 
         else:

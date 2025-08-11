@@ -6,6 +6,7 @@ import asyncio
 import os
 from datetime import datetime
 import logging
+from collections import defaultdict, deque
 
 # Configure logging
 logging.basicConfig(
@@ -15,10 +16,13 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 HEARTBEAT_INTERVAL = 5
-SAVE_DIR = r"D:\backend_algorithm_blind_person_guidance\json_save"
+SAVE_DIR = r"D:\\backend_algorithm_blind_person_guidance\\json_save"
 
 # Ensure save directory exists
 os.makedirs(SAVE_DIR, exist_ok=True)
+
+# Per-client message queues
+client_queues = defaultdict(deque)
 
 async def send_heartbeat(websocket):
     while True:
@@ -46,12 +50,10 @@ async def send_heartbeat(websocket):
 def save_response_to_file(response):
     """Save response to unique JSON file with timestamp"""
     try:
-        # Generate unique filename with timestamp
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]  # Include milliseconds
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
         filename = f"response_{timestamp}.json"
         file_path = os.path.join(SAVE_DIR, filename)
 
-        # Remove non-serializable data if any
         serializable_response = {k: v for k, v in response.items() if v is not None}
         
         with open(file_path, 'w', encoding='utf-8') as f:
@@ -67,7 +69,9 @@ def save_response_to_file(response):
 async def blind_glasses_handler(websocket):
     blind_guidance_model = None
     heartbeat_task = None
-    
+    client_id = id(websocket)
+    count = 1
+
     try:
         blind_guidance_model = BlindDetection()
         heartbeat_task = asyncio.create_task(send_heartbeat(websocket))
@@ -77,8 +81,34 @@ async def blind_glasses_handler(websocket):
             try:
                 message = json.loads(data)
                 logger.info(f"Received message from {websocket.remote_address}")
+                logger.info(f'The client id is {client_id}')
 
-                image_base64 = message.get("image")
+                # Extract mode early
+                mode = message.get("mode", "default")
+                logger.info(f"The mode received is : {mode}")
+
+                # Append the incoming message once
+                client_queues[client_id].append(message)
+
+                logger.info(f"Total messages in clients are: {len(client_queues[client_id])}")
+                last_mode = client_queues[client_id][-2].get("mode", "default")
+                current_mode = client_queues[client_id][-1].get("mode", "default")
+                logger.info(f'The current and previous mode are: {current_mode}, {last_mode}')
+                if last_mode != current_mode:
+                    # Clear queue except last message
+                    last_msg = client_queues[client_id].pop()
+                    client_queues[client_id].clear()
+                    logger.info(f'After clearing the length of queue is : {len(client_queues[client_id])}')
+                    client_queues[client_id].append(last_msg)
+
+                logger.info(f"Raw message queued for client {client_id} (queue length: {len(client_queues[client_id])})")
+                logger.info(f"The message count {count} is sent")
+
+                # Process the oldest message (this removes it from the queue)
+                raw_message = client_queues[client_id].popleft()
+
+                # Decode image bytes from raw message
+                image_base64 = raw_message.get("image")
                 if not image_base64:
                     error_msg = "No image data received"
                     logger.warning(error_msg)
@@ -86,12 +116,12 @@ async def blind_glasses_handler(websocket):
                     continue
 
                 image_bytes = base64.b64decode(image_base64)
-                mode = message.get("mode", "default")
+                raw_mode = raw_message.get("mode", "default")
 
-                # Process image
+                # Process image using the model
                 obstacles = await blind_guidance_model.image_processing(
-                    image_bytes, 
-                    glasses_mode=mode
+                    image_bytes,
+                    glasses_mode=raw_mode
                 )
 
                 # Prepare response
@@ -105,15 +135,19 @@ async def blind_glasses_handler(websocket):
                     'medicine_info': obstacles.medicine_info
                 }
 
-                # Log response details
                 logger.info(f'Medicine info: {obstacles.medicine_info}')
                 logger.info(f'Text command: {obstacles.answer}')
                 logger.info(f'Important image info: {obstacles.imp_image_info}')
-                
-                # Save response to file
-                save_response_to_file(response)
+                logger.info(f'Current info sent is (mode info): {obstacles.mode_selection}')
+                if obstacles.audio_bytes is not None:
+                    logger.info(f'The audio check: {obstacles.audio_bytes[:10]}')
+                else:
+                    logger.info(f'The audio check: {obstacles.audio_bytes}')
 
-                # Send response back
+  
+                count += 1
+
+                # save_response_to_file(response)
                 await websocket.send(json.dumps(response))
                 logger.info("Response sent to client")
 
@@ -136,18 +170,9 @@ async def blind_glasses_handler(websocket):
         logger.info(f"Closing connection with {websocket.remote_address}")
         if heartbeat_task:
             heartbeat_task.cancel()
-        # Add any cleanup code for the model if needed
+        client_queues.pop(client_id, None)
         if blind_guidance_model:
             try:
-                # If your model has a cleanup method
                 await blind_guidance_model.cleanup()
             except Exception as e:
                 logger.warning(f"Error during model cleanup: {str(e)}")
-
-# Add code to start the server if needed
-async def main():
-    async with websockets.serve(blind_glasses_handler, "0.0.0.0", 8765):
-        await asyncio.Future()  # Run forever
-
-if __name__ == "__main__":
-    asyncio.run(main())

@@ -4,7 +4,7 @@ import json
 import base64
 
 async def send_image_to_websocket(image_path: str):
-    uri = "ws://localhost:8765"  # Match the server's WebSocket port
+    uri = "ws://localhost:8766"  # Match the server's WebSocket port
 
     async with websockets.connect(uri,max_size=2*1024*1024) as websocket:
         while True:

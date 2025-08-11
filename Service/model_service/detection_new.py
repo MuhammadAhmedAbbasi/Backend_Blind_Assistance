@@ -12,7 +12,14 @@ from Service.common.image_processing_return import ImageProcessingReturn
 from Service.config import mode, file_suffix, file_prefix, file_directory, drug_detection_mode, blind_guidance_mode
 from Service.models.intelligent_drug_detection import IntelligentDrugDetection
 from Service.models.medicine_model_chinese import MedicineModelChinese
-
+import logging
+import time
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 class BlindDetection:
     def __init__(self):
@@ -57,13 +64,18 @@ class BlindDetection:
         
 
         elif glasses_mode == drug_detection_mode:
+            start_time = time.time()
             medicine_name, ocr_detection =  self.intelli.invoke(img)
+            end_ocr = time.time() - start_time
+            logger.info(f' The Intelligent mode time is: {end_ocr}')
             if medicine_name == '无匹配项':
                 medicine_info = '所给药物不在数据库中'
             elif medicine_name == '未检测到任何东西':
                 medicine_info = '未检测到药物，请将药物放在摄像头前以获得清晰的视图'
             else:
+                medicine_response_time = time.time()
                 medicine_info = self.perscription_model.invoke(medicine_name)
+                e_c_name = time.time() - medicine_response_time
             medicine_audio_bytes_base64, medicine_model_bytes = self.tts_model.text_to_speech_and_show_bytes(medicine_info)
             return ImageProcessingReturn(
                 audio_bytes = medicine_audio_bytes_base64,

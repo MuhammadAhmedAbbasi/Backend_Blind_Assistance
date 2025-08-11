@@ -3,7 +3,14 @@ from langchain_ollama import ChatOllama
 from pydantic import BaseModel
 from langchain.prompts import ChatPromptTemplate
 import cv2
-
+import time
+import logging
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 class Structured_Output(BaseModel):
     medicine_name: str
 
@@ -48,8 +55,14 @@ class IntelligentDrugDetection:
             detection.append("未检测到任何东西")
         return detection
     def invoke(self, image_bytes):
+        ocr_tim = time.time()
         detection = self.OCR_detection(image_bytes)
+        end_time = time.time() - ocr_tim
+        logger.info(f'The time taken by ocr is: {end_time}')
         res = self.prompt | self.correction_model
+        name_correction_model = time.time()
         answer = res.invoke({'input': detection}).medicine_name
+        end_correction_time = time.time() - name_correction_model
+        logger.info(f"The name correction model time: {end_correction_time}")
         return answer, detection
         

@@ -30,11 +30,17 @@ class BlindDetection:
         self.perscription_model = MedicineModelChinese()
         self.tts_model = TTS()
 
-    async def image_processing(self, image_bytes: bytes, glasses_mode: str = "detection") -> ImageProcessingReturn:
+    async def image_processing(self, image_path: str = None, image_bytes: bytes = None, glasses_mode: str = "detection") -> ImageProcessingReturn:
         save_dir_path = os.path.join((os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), file_directory)
-        # Convert bytes to OpenCV format (numpy array)
-        nparr = np.frombuffer(image_bytes, np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if image_bytes != None:
+            # Convert bytes to OpenCV format (numpy array)
+            nparr = np.frombuffer(image_bytes, np.uint8)
+            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        elif image_path != None:
+            img = cv2.imread(image_path, cv2.IMREAD_COLOR)
+        else:
+            logging.error(f'No path or bytes found, kindly upload valid path or bytes')
+            pass
         if glasses_mode == blind_guidance_mode:
             resized_frame, depth_vis, outside_vicinity, inside_vicinity = self.detection_model.process_frame(img)
             save_image(resized_frame, save_dir_path, file_prefix)

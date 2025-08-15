@@ -19,6 +19,17 @@
         }
         
     },
+    
+        "Drug_Detection_Model_Parameters":{
+            "model_loading":{
+                "name_model":"qwen2.5:3b",
+                "name_model_url":"http://localhost:11434",
+                "drug_info_model":"qwen2.5:3b",
+                "drug_model_url": "http://localhost:11434"
+            }
+
+        },
+
     "Guidance_model": {
         "llm_model" : "qwen2.5:7b",
         "base_url": "http://localhost:11434"
@@ -32,5 +43,9 @@
     "glasses_mode":{
         "blind_guidance_mode": "detection",
         "drug_detection_mode": "Drug_detection"
+    },
+    "path":{
+        "file_save_path": "file_save_path",
+        "audio_save_path": "audio"
     }
 }

@@ -15,6 +15,8 @@ detection_model_params = config["Detection_Model_Parameters"]
 guidance_model = config['Guidance_model']
 model_service = config['model_service']
 glasses_mode_detection = config['glasses_mode']
+file_paths = config['path']
+Drug_Detection_Model_Parameters = config['Drug_Detection_Model_Parameters']
 
 # Model Loading
 detection_model = detection_model_params["model_loading"]["detection_model"]
@@ -45,6 +47,17 @@ file_suffix = model_service["file_suffix"]
 file_directory = model_service['file_directory']
 file_prefix = model_service['file_prefix']
 file_suffix = model_service['file_suffix']
+
+
+# save_paths 
+file_save_path = file_paths['file_save_path']
+audio_save_path = file_paths['audio_save_path']
+
+# Drug_Detection_Model_Parameters
+correction_model_name = Drug_Detection_Model_Parameters['model_loading']['name_model']
+correction_model_url = Drug_Detection_Model_Parameters['model_loading']['name_model_url']
+drug_info_model = Drug_Detection_Model_Parameters['model_loading']['drug_info_model']
+drug_model_url = Drug_Detection_Model_Parameters['model_loading']['drug_model_url']
 
 if __name__ == "__main__":
     # Print all loaded variables

@@ -1,6 +1,7 @@
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama.llms import OllamaLLM
 import json
+from Service.config import drug_info_model, drug_model_url
 
 
 class MedicineModelChinese():
@@ -9,7 +10,7 @@ class MedicineModelChinese():
         self.prompt = self.prompt_initialize()
         self.medicine_info = self.load_medicine_context()
     def model_initialize(self):
-        model = OllamaLLM(model="qwen2.5:7b", base_url="http://localhost:11434")
+        model = OllamaLLM(model = drug_info_model, base_url = drug_model_url)
         return model
     def load_medicine_context(self):
         with open(r'D:\backend_algorithm_blind_person_guidance\Service\drug_knowledge.json', 'r', encoding='utf-8') as f:

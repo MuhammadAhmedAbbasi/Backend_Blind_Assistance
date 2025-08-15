@@ -4,23 +4,24 @@ import base64
 import websockets
 import asyncio
 import os
-from datetime import datetime
+
 import logging
 from collections import defaultdict, deque
 import time
+from Service.config import audio_save_path, file_save_path
+from Service.logs.log import logger
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
 
 HEARTBEAT_INTERVAL = 5
-SAVE_DIR = r"D:\\backend_algorithm_blind_person_guidance\\json_save"
 
-# Ensure save directory exists
-os.makedirs(SAVE_DIR, exist_ok=True)
+base_path = (os.path.dirname(os.path.abspath(__name__)))
+
+file_path = os.path.join(base_path, file_save_path)
+audio_path = os.path.join(base_path, audio_save_path)
+
+# Ensure save directories exist
+os.makedirs(file_path, exist_ok=True)
+os.makedirs(audio_path, exist_ok=True) 
 
 # Per-client message queues
 client_queues = defaultdict(deque)
@@ -48,24 +49,6 @@ async def send_heartbeat(websocket):
             logger.error(f"Error sending heartbeat: {str(e)}")
         await asyncio.sleep(HEARTBEAT_INTERVAL)
 
-def save_response_to_file(response):
-    """Save response to unique JSON file with timestamp"""
-    try:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
-        filename = f"response_{timestamp}.json"
-        file_path = os.path.join(SAVE_DIR, filename)
-
-        serializable_response = {k: v for k, v in response.items() if v is not None}
-        
-        with open(file_path, 'w', encoding='utf-8') as f:
-            json.dump(serializable_response, f, ensure_ascii=False, indent=4)
-        
-        logger.info(f"Response saved to: {file_path}")
-        return file_path
-        
-    except Exception as e:
-        logger.error(f"Failed to save response: {str(e)}")
-        return None
 
 async def blind_glasses_handler(websocket):
     blind_guidance_model = None
@@ -77,11 +60,21 @@ async def blind_glasses_handler(websocket):
         blind_guidance_model = BlindDetection()
         heartbeat_task = asyncio.create_task(send_heartbeat(websocket))
         logger.info(f'Connection established with device: {websocket.remote_address}')
-
+        if count == 1:
+            _ = await blind_guidance_model.image_processing(
+                    image_path = os.path.join(base_path, "save_path\startup_save_path\detection.jpg"),
+                    glasses_mode = 'detection'
+                )
+            _ = await blind_guidance_model.image_processing(
+                    image_path = os.path.join(base_path, "save_path\startup_save_path\drug.jpg"),
+                    glasses_mode = 'drug_detection'
+                )
+            logging.info(f'The detection and drug check has completed')
+            count += 1
+            
         async for data in websocket:
             try:
                 message = json.loads(data)
-                whole_start_time = time.time()
                 logger.info(f"Received message from {websocket.remote_address}")
                 logger.info(f'The client id is {client_id}')
 
@@ -93,7 +86,7 @@ async def blind_glasses_handler(websocket):
                 client_queues[client_id].append(message)
 
                 logger.info(f"Total messages in clients are: {len(client_queues[client_id])}")
-                last_mode = client_queues[client_id][-2].get("mode", "default")
+                last_mode = client_queues[client_id][-2].get("mode", "default") if len(client_queues[client_id]) > 1 else "default"
                 current_mode = client_queues[client_id][-1].get("mode", "default")
                 if last_mode != current_mode:
                     # Clear queue except last message
@@ -118,7 +111,7 @@ async def blind_glasses_handler(websocket):
                 start_time = time.time()
                 # Process image using the model
                 obstacles = await blind_guidance_model.image_processing(
-                    image_bytes,
+                    image_bytes = image_bytes,
                     glasses_mode=raw_mode
                 )
                 end_time = time.time() - start_time
@@ -134,13 +127,14 @@ async def blind_glasses_handler(websocket):
                     'medicine_info': obstacles.medicine_info
                 }
 
+                # 保存音频文件
+                
                 if obstacles.audio_bytes is not None:
                     logger.info(f'The audio check: {obstacles.audio_bytes[:10]}')
+                    # 调用音频保存函数
+                    # save_audio_file(obstacles.audio_bytes, client_id)
                 else:
                     logger.info(f'The audio check: {obstacles.audio_bytes}')
-
-  
-                count += 1
                 # save_response_to_file(response)
                 await websocket.send(json.dumps(response))
                 logger.info("Response sent to client")

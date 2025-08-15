@@ -5,6 +5,8 @@ from langchain.prompts import ChatPromptTemplate
 import cv2
 import time
 import logging
+
+from Service.config import correction_model_name, correction_model_url
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -21,7 +23,7 @@ class IntelligentDrugDetection:
         self.prompt = self.correction_prompt()
     def model_initialize(self):
         reader = easyocr.Reader(['ch_sim', 'en'], gpu=True)
-        correction_model = ChatOllama(model = 'qwen2.5:7b', base_url = "http://localhost:11434")
+        correction_model = ChatOllama(model = correction_model_name, base_url = correction_model_url)
         return reader, correction_model
     def correction_prompt(self):
         tem = """   您作为专家，需要分析经过 OCR 从图片中识别出的名称列表。如果其中有一个名称是正确的药品名称，或者没有任何一个名称与原药品名称正确匹配或相关，那么您可以自行分析并给出正确的名称，具体如下：

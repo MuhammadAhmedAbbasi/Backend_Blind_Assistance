@@ -13,6 +13,22 @@ from Service.logs.log import logger
 
 
 HEARTBEAT_INTERVAL = 5
+blind_guidance_model = BlindDetection()
+base_path = (os.path.dirname(os.path.abspath(__name__)))
+async def initialize_model():
+    await blind_guidance_model.image_processing(
+            image_path = os.path.join(base_path, "save_path/startup_save_path/detection.jpg"),  # 3. Use / instead of \
+            glasses_mode = 'detection'
+        )
+    await blind_guidance_model.image_processing(
+            image_path = os.path.join(base_path, "save_path/startup_save_path/drug.jpg"),  # 3. Use / instead of \
+            glasses_mode = 'drug_detection'
+        )
+    logger.info(f'The detection and drug check has completed')
+
+# 2. Run the async initialization before starting the server
+asyncio.run(initialize_model())
+
 
 base_path = (os.path.dirname(os.path.abspath(__name__)))
 
@@ -51,33 +67,38 @@ async def send_heartbeat(websocket):
 
 
 async def blind_glasses_handler(websocket):
-    blind_guidance_model = None
+
     heartbeat_task = None
     client_id = id(websocket)
+    
     count = 1
 
     try:
-        blind_guidance_model = BlindDetection()
+        
         heartbeat_task = asyncio.create_task(send_heartbeat(websocket))
         logger.info(f'Connection established with device: {websocket.remote_address}')
-        if count == 1:
-            _ = await blind_guidance_model.image_processing(
-                    image_path = os.path.join(base_path, "save_path\startup_save_path\detection.jpg"),
-                    glasses_mode = 'detection'
-                )
-            _ = await blind_guidance_model.image_processing(
-                    image_path = os.path.join(base_path, "save_path\startup_save_path\drug.jpg"),
-                    glasses_mode = 'drug_detection'
-                )
-            logging.info(f'The detection and drug check has completed')
-            count += 1
+        start_t = time.time()
+        # if count == 1:
+        #     _ = await blind_guidance_model.image_processing(
+        #             image_path = os.path.join(base_path, "save_path\startup_save_path\detection.jpg"),
+        #             glasses_mode = 'detection'
+        #         )
+        #     _ = await blind_guidance_model.image_processing(
+        #             image_path = os.path.join(base_path, "save_path\startup_save_path\drug.jpg"),
+        #             glasses_mode = 'drug_detection'
+        #         )
+            # logging.info(f'The detection and drug check has completed')
+            # count += 1
             
         async for data in websocket:
             try:
+                 
                 message = json.loads(data)
                 logger.info(f"Received message from {websocket.remote_address}")
                 logger.info(f'The client id is {client_id}')
-
+                end_t = time.time() - start_t
+                logger.info(f"The first message time is : {end_t}")
+                main_received_data = time.time()
                 # Extract mode early
                 mode = message.get("mode", "default")
                 logger.info(f"The mode received is : {mode}")
@@ -126,7 +147,8 @@ async def blind_glasses_handler(websocket):
                     'mode_selection': obstacles.mode_selection,
                     'medicine_info': obstacles.medicine_info
                 }
-
+                end_overall = time.time() - main_received_data
+                logger.info(f'The overall time of processing: {end_overall}')
                 # 保存音频文件
                 
                 if obstacles.audio_bytes is not None:

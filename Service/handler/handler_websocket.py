@@ -10,24 +10,25 @@ from collections import defaultdict, deque
 import time
 from Service.config import audio_save_path, file_save_path
 from Service.logs.log import logger
+from datetime import datetime
 
 
 HEARTBEAT_INTERVAL = 5
-blind_guidance_model = BlindDetection()
-base_path = (os.path.dirname(os.path.abspath(__name__)))
-async def initialize_model():
-    await blind_guidance_model.image_processing(
-            image_path = os.path.join(base_path, "save_path/startup_save_path/detection.jpg"),  # 3. Use / instead of \
-            glasses_mode = 'detection'
-        )
-    await blind_guidance_model.image_processing(
-            image_path = os.path.join(base_path, "save_path/startup_save_path/drug.jpg"),  # 3. Use / instead of \
-            glasses_mode = 'drug_detection'
-        )
-    logger.info(f'The detection and drug check has completed')
+# blind_guidance_model = BlindDetection()
+# base_path = (os.path.dirname(os.path.abspath(__name__)))
+# async def initialize_model():
+#     await blind_guidance_model.image_processing(
+#             image_path = os.path.join(base_path, "save_path/startup_save_path/detection.jpg"),  # 3. Use / instead of \
+#             glasses_mode = 'detection'
+#         )
+#     await blind_guidance_model.image_processing(
+#             image_path = os.path.join(base_path, "save_path/startup_save_path/drug.jpg"),  # 3. Use / instead of \
+#             glasses_mode = 'drug_detection'
+#         )
+#     logger.info(f'The detection and drug check has completed')
 
-# 2. Run the async initialization before starting the server
-asyncio.run(initialize_model())
+# # 2. Run the async initialization before starting the server
+# asyncio.run(initialize_model())
 
 
 base_path = (os.path.dirname(os.path.abspath(__name__)))
@@ -56,17 +57,18 @@ async def send_heartbeat(websocket):
             }
             message = json.dumps(heartbeat_message)
             await websocket.send(message)
-            logger.info("Heartbeat sent")
+            logger.info("💓 Heartbeat sent (心跳包已发送)")
 
         except websockets.exceptions.ConnectionClosed:
-            logger.info("Connection closed during heartbeat")
+            logger.info("🔌 Connection closed during heartbeat (心跳时连接已关闭)")
             break
         except Exception as e:
-            logger.error(f"Error sending heartbeat: {str(e)}")
+            logger.error(f"⚠️ Error sending heartbeat (发送心跳错误): {str(e)}")
         await asyncio.sleep(HEARTBEAT_INTERVAL)
 
 
 async def blind_glasses_handler(websocket):
+    blind_guidance_model = BlindDetection()
 
     heartbeat_task = None
     client_id = id(websocket)
@@ -76,29 +78,34 @@ async def blind_glasses_handler(websocket):
     try:
         
         heartbeat_task = asyncio.create_task(send_heartbeat(websocket))
-        logger.info(f'Connection established with device: {websocket.remote_address}')
-        start_t = time.time()
-        # if count == 1:
-        #     _ = await blind_guidance_model.image_processing(
-        #             image_path = os.path.join(base_path, "save_path\startup_save_path\detection.jpg"),
-        #             glasses_mode = 'detection'
-        #         )
-        #     _ = await blind_guidance_model.image_processing(
-        #             image_path = os.path.join(base_path, "save_path\startup_save_path\drug.jpg"),
-        #             glasses_mode = 'drug_detection'
-        #         )
-            # logging.info(f'The detection and drug check has completed')
-            # count += 1
+        logger.info(f"✅ Connection established with device {websocket.remote_address} (已与设备建立连接)")
             
         async for data in websocket:
             try:
-                 
+                my_own_start_T = time.time()
                 message = json.loads(data)
-                logger.info(f"Received message from {websocket.remote_address}")
-                logger.info(f'The client id is {client_id}')
-                end_t = time.time() - start_t
-                logger.info(f"The first message time is : {end_t}")
-                main_received_data = time.time()
+                logger.info(f"📩 Message received from {websocket.remote_address} (收到消息) | client_id={client_id}")
+                start_t = message.get("send_time")
+                if start_t:
+                    try:
+                        start_t = float(start_t)
+
+                        # Convert ms → seconds if too large
+                        if start_t > 1e12:  
+                            start_t /= 1000.0
+
+                        latency_up = time.time() - start_t
+                        logger.info(
+                            f"⏱️ Client→Server latency: {latency_up:.3f}s | 客户端到服务器延迟: {latency_up:.3f}秒"
+                        )
+                    except Exception as e:
+                        logger.warning(f"⚠️ Could not parse send_time (无法解析 send_time): {e}")
+                else:
+                    logger.warning("⚠️ No send_time in message; cannot compute latency (消息缺少 send_time，无法计算延迟)")
+                parsing_duration = time.time() - my_own_start_T
+                logger.info(f"⏱️ Server parsing time: {parsing_duration:.3f}s | 服务器解析时间: {parsing_duration:.3f}秒")
+
+                code_processing_time = time.time()
                 # Extract mode early
                 mode = message.get("mode", "default")
                 logger.info(f"The mode received is : {mode}")
@@ -129,14 +136,16 @@ async def blind_glasses_handler(websocket):
 
                 image_bytes = base64.b64decode(image_base64)
                 raw_mode = raw_message.get("mode", "default")
-                start_time = time.time()
+                models_processing_start_time = time.time()
                 # Process image using the model
                 obstacles = await blind_guidance_model.image_processing(
                     image_bytes = image_bytes,
                     glasses_mode=raw_mode
                 )
-                end_time = time.time() - start_time
-                logger.info(f'The time taken for response is: {end_time}')
+                models_processing_end_time = time.time() - models_processing_start_time
+                logger.info(f"🤖 Model processing time: {models_processing_end_time:.3f}s | 模型处理时间: {models_processing_end_time:.3f}秒")
+                gaojinwei_time = str(datetime.now())[11:23]
+                logger.info(f"The time I sent Glasses is : {gaojinwei_time}")
                 # Prepare response
                 response = {
                     "audio": obstacles.audio_bytes,
@@ -145,21 +154,25 @@ async def blind_glasses_handler(websocket):
                     'other_image_info': obstacles.other_image_info,
                     'resized_image': obstacles.resized_image,
                     'mode_selection': obstacles.mode_selection,
-                    'medicine_info': obstacles.medicine_info
+                    'medicine_info': obstacles.medicine_info,
+                    "sending_time": gaojinwei_time
                 }
-                end_overall = time.time() - main_received_data
-                logger.info(f'The overall time of processing: {end_overall}')
-                # 保存音频文件
                 
+                # 保存音频文件
+                send_parse_time = time.time()
                 if obstacles.audio_bytes is not None:
-                    logger.info(f'The audio check: {obstacles.audio_bytes[:10]}')
+                    logger.info(f"🎵 Audio check OK (音频检查成功): {obstacles.audio_bytes[:10]}")
                     # 调用音频保存函数
                     # save_audio_file(obstacles.audio_bytes, client_id)
                 else:
-                    logger.info(f'The audio check: {obstacles.audio_bytes}')
+                    logger.info("🎵 No audio generated (未生成音频)")
                 # save_response_to_file(response)
                 await websocket.send(json.dumps(response))
-                logger.info("Response sent to client")
+                logger.info("📤 Response sent to client (响应已发送给客户端)")
+                end_overall = time.time() - code_processing_time
+                logger.info(f'The overall time of processing (Models + Sending) 处理的总体时间（模型 + 发送: {end_overall}')
+                logger.info(f'The Only sending time is 唯一发送时间是: {time.time() - send_parse_time}')
+                
 
             except json.JSONDecodeError:
                 error_msg = "Invalid JSON format"

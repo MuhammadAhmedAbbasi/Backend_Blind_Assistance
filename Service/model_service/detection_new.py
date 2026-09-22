@@ -9,11 +9,12 @@ from Service.models.tts_model import TTS
 import base64
 from Service.common.save_image import save_image
 from Service.common.image_processing_return import ImageProcessingReturn
-from Service.config import mode, file_suffix, file_prefix, file_directory, drug_detection_mode, blind_guidance_mode
+from Service.config import mode, file_suffix, file_prefix, file_directory, drug_detection_mode, blind_guidance_mode, save_debug_images
 from Service.models.intelligent_drug_detection import IntelligentDrugDetection
 from Service.models.medicine_model_chinese import MedicineModelChinese
 import logging
 import time
+import asyncio
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -30,20 +31,22 @@ class BlindDetection:
         self.perscription_model = MedicineModelChinese()
         self.tts_model = TTS()
 
-    async def image_processing(self, image_path: str = None, image_bytes: bytes = None, glasses_mode: str = "detection") -> ImageProcessingReturn:
+    def _image_processing_sync(self, image_path: str = None, image_bytes: bytes = None, glasses_mode: str = "detection") -> ImageProcessingReturn:
         save_dir_path = os.path.join((os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), file_directory)
-        if image_bytes != None:
+        if (image_bytes is None) == (image_path is None):
+            raise ValueError("Provide exactly one image source")
+        if image_bytes is not None:
             # Convert bytes to OpenCV format (numpy array)
             nparr = np.frombuffer(image_bytes, np.uint8)
             img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         elif image_path != None:
             img = cv2.imread(image_path, cv2.IMREAD_COLOR)
-        else:
-            logging.error(f'No path or bytes found, kindly upload valid path or bytes')
-            pass
+        if img is None:
+            raise ValueError("Unable to decode image")
         if glasses_mode == blind_guidance_mode:
             resized_frame, depth_vis, outside_vicinity, inside_vicinity = self.detection_model.process_frame(img)
-            save_image(resized_frame, save_dir_path, file_prefix)
+            if save_debug_images:
+                save_image(resized_frame, save_dir_path, file_prefix)
             # Convert resized_frame to bytes
             _, encoded_image = cv2.imencode(file_suffix, resized_frame)
             resized_image_base64 = base64.b64encode(encoded_image).decode('utf-8')
@@ -67,8 +70,6 @@ class BlindDetection:
                 mode_selection = glasses_mode,
                 medicine_info = None
             )
-        
-
         elif glasses_mode == drug_detection_mode:
             start_time = time.time()
             medicine_name, ocr_detection =  self.intelli.invoke(img)
@@ -96,6 +97,10 @@ class BlindDetection:
                 mode_selection = "Invalid Mode Selected. Please choose 'detection' or 'Drug_detection'."
             )
 
+    async def image_processing(self, *, image_path: str = None, image_bytes: bytes = None, glasses_mode: str = "detection") -> ImageProcessingReturn:
+        async with _INFERENCE_LIMIT:
+            return await asyncio.to_thread(self._image_processing_sync, image_path, image_bytes, glasses_mode)
 
-    
+
+_INFERENCE_LIMIT = asyncio.Semaphore(1)
 blind_algo = BlindDetection()

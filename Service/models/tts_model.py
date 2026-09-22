@@ -4,7 +4,7 @@ import base64
 import tempfile
 import gc
 from pydub import AudioSegment
-from base_models.base_tts import BaseTTS
+from Service.base_models.base_tts import BaseTTS
 
 
 class TTS(BaseTTS):

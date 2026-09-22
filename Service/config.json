@@ -5,8 +5,8 @@
             "depth_model": "depth_anything_v2_vits.pth"    
         },
         "image_processing": {
-            "image_height": 1000,
-            "image_width": 1500,
+            "image_height": 640,
+            "image_width": 960,
             "normalize_alpha": 0,
             "normalize_beta": 255
         },
@@ -15,7 +15,8 @@
             "vicinity_angle": 45
         },
         "other_parameters":{
-            "yolo_model_confidence": 0.2
+            "yolo_model_confidence": 0.2,
+            "save_debug_images": false
         }
         
     },
@@ -37,7 +38,7 @@
     "model_service": {
         "mode": "ZH",
         "file_suffix": ".jpg",
-        "file_directory": "assets/Images",
+        "file_directory": "runtime_data/images",
         "file_prefix": "Output"
     },
     "glasses_mode":{
@@ -45,7 +46,7 @@
         "drug_detection_mode": "Drug_detection"
     },
     "path":{
-        "file_save_path": "file_save_path",
-        "audio_save_path": "audio"
+        "file_save_path": "runtime_data/files",
+        "audio_save_path": "runtime_data/audio"
     }
 }

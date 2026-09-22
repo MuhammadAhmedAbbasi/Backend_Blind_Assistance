@@ -14,7 +14,7 @@ class GuidanceModelChinese(BaseGuidanceModel):
         if not inside_vicinity:  # If list is empty
             imp_scene_description = "附近什么都没有，你可以直走。"
         else: 
-            for obj in sorted(inside_vicinity, key=lambda x: x['depth']):  # Sort by proximity
+            for obj in sorted(inside_vicinity, key=lambda x: x['depth'], reverse=True):
                 imp_scene_parts.append(
                     f"A {obj['label']} {obj['zone']} ({obj['depth']:.1f} depth)")
             imp_scene_description = " 附近障碍物: " + "\n".join(imp_scene_parts)

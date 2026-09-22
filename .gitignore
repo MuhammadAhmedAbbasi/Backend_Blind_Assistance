@@ -52,7 +52,7 @@ Icon?
 beijing/
 beijing_env/
 runs/
-assets/Images/
+runtime_data/
 Models/Depth-Anything-V2-Small/
 Models/Depth-Anything-V2/
 Models/detection_models/yolo11x.pt

@@ -35,6 +35,7 @@ vicinity_angle = detection_model_params["image_vicinity"]["vicinity_angle"]
 
 # Other Parameters
 yolo_model_confidence = detection_model_params["other_parameters"]["yolo_model_confidence"]
+save_debug_images = detection_model_params["other_parameters"].get("save_debug_images", False)
 
 # Glasses Mode Selection
 blind_guidance_mode = glasses_mode_detection["blind_guidance_mode"]

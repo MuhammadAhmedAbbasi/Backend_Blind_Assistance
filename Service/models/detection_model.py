@@ -21,6 +21,7 @@ class DetectionLogic(BaseDetectionModel):
         self.yolo, self.depth_model = self.initialize_models()
 
     def initialize_models(self):
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         # Initialize YOLO model
         yolo_model = YOLO(model=self.yolo_path)
         
@@ -28,14 +29,14 @@ class DetectionLogic(BaseDetectionModel):
         depth_model = DepthAnythingV2(encoder='vits', features=64, out_channels=[48, 96, 192, 384])
         depth_model.load_state_dict(torch.load(
             self.depth_path,
-            map_location='cuda'
+            map_location=device
         ))
-        depth_model.cuda()
+        depth_model.to(device)
         depth_model.eval()
         
         return yolo_model, depth_model
 
-    def resizing_image(self, image, width=1500, height=1000, interpolation_method=cv2.INTER_CUBIC):
+    def resizing_image(self, image, width=image_width, height=image_height, interpolation_method=cv2.INTER_CUBIC):
         dsize = (width, height)
         resized_image = cv2.resize(image, dsize=dsize, interpolation=interpolation_method)
         return resized_image

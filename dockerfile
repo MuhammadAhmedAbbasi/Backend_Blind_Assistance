@@ -12,6 +12,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 ENV PYTHONPATH=/app
-EXPOSE 8888
+EXPOSE 8888 8766
 
 CMD ["uvicorn", "Service.main:app", "--host", "0.0.0.0", "--port", "8888"]

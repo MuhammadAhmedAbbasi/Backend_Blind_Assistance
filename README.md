@@ -1,88 +1,183 @@
-Blind person assistance
+# Blind Assistance Backend
 
-Steps to Run The Code 
+Backend services for an assistive vision system. The service accepts camera frames, detects nearby obstacles, generates navigation guidance, performs medicine recognition, and returns text, structured metadata, and optional audio.
 
-**Step 1:**
-git clone https://github.com/MuhammadAhmedAbbasi/Backend_Blind_Assistance.git
+## Capabilities
 
-**Step 2:**
+- YOLO object detection and Depth Anything V2 depth estimation.
+- Chinese and English navigation guidance through Ollama.
+- Medicine OCR and medicine-information lookup.
+- Text-to-speech audio responses.
+- REST and WebSocket interfaces.
+- CPU fallback when CUDA is unavailable.
+- Bounded inference concurrency and latest-frame processing for live clients.
 
+## Requirements
 
-Download The requirements by typing below:
+- Python 3.10 or later.
+- NVIDIA GPU with a compatible CUDA/PyTorch installation is recommended.
+- Ollama for guidance and medicine-language models.
+- Depth Anything V2 and YOLO model files.
+
+## Installation
+
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
 pip install -r requirements.txt
+```
 
-Additional Point: Before downloading the requirement, it's better to check the Graphic card and download the torch-cuda activated. For this, download cuda and then see the supported torch from website and download it, so code will run on GPU not CPU. The cuda (Nvidia RTX 4070) version for the PC on which code is written is 12.6 and below is the line of code to run
+For NVIDIA systems, install the PyTorch build matching the installed CUDA runtime by using the official PyTorch selector.
 
-pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
+## Model Setup
 
-Remember to download cuda before installing Torch
+Place the model files in the directories expected by `Service/models/detection_model.py`. The default configuration expects:
 
-Optional :  It's better to create the envornment for clean working of code: 
+```text
+Models/
+├── Depth-Anything-V2/
+│   └── depth_anything_v2/
+└── Depth-Anything-V2-Small/
+    └── depth_anything_v2_vits.pth
+```
 
-Command for creating environment: 
+The default YOLO weight is `yolo11x.pt`. Model names and paths are controlled by `Service/config.json`.
 
-python -m venv beijing_project
+Install and start Ollama:
 
-After this, next command is:
+```powershell
+ollama serve
+ollama pull qwen2.5:3b
+```
 
-beijing_project/Scripts/activate
+Update the Ollama URLs in `Service/config.json` when Ollama runs on another host.
 
-After the environment is activated then write below command to install all libraries inside the environment
+## Configuration
 
-pip install -r requirements.txt
+Edit [Service/config.json](Service/config.json) for model names, Ollama URLs, image dimensions, confidence thresholds, language mode, and output locations. Generated files are kept under:
 
+```text
+runtime_data/
+├── audio/
+├── files/
+└── images/
+```
 
-**Step 3:**
+The directories are created automatically. Debug image output is disabled by default.
 
-Now to download Depth Anything, follow the below GITHUB 
+## Running
 
-https://github.com/DepthAnything/Depth-Anything-V2?tab=readme-ov-file
+From the repository root:
 
-First clone it :
+```powershell
+python Service\main.py
+```
 
-git clone https://github.com/DepthAnything/Depth-Anything-V2.git
+or:
 
-and then put in the "Models" folder, create another folder on Models folder with name of "Depth-Anything-V2-Small" and download the model from below link 
+```powershell
+python -m Service.main
+```
 
-https://huggingface.co/depth-anything/Depth-Anything-V2-Small/resolve/main/depth_anything_v2_vits.pth?download=true
+The service exposes HTTP on `http://localhost:8888` and WebSocket on `ws://localhost:8766`.
 
+## REST API
 
-For Guidance Model:
+### Blind guidance and medicine mode
 
-Download Ollama 
-Start the Ollama service
-Download qwen2.5:14b by write following command in CMD 
-ollama pull qwen2.5:14b
+`POST /algorithm/api/blind/detect/`
 
-**Step 4:**
+Multipart fields:
 
-Now There is file name "config.json
+| Field | Required | Values |
+|---|---:|---|
+| `file` | Yes | Image upload |
+| `glasses_mode` | Yes | `detection` or `Drug_detection` |
 
-![alt text](image-2.png)
+Example:
 
-Open this file, and go the "Guidance_Model" and "base_url" and change the IP from 192.168.... to localhost.
+```powershell
+curl.exe -X POST "http://localhost:8888/algorithm/api/blind/detect/" `
+  -F "file=@sample.jpg" `
+  -F "glasses_mode=detection"
+```
 
-From This :
+### Dedicated medicine endpoint
 
-![alt text](image-3.png)
+`POST /algorithm/api/drug_detection/detect`
 
-To:
+```powershell
+curl.exe -X POST "http://localhost:8888/algorithm/api/drug_detection/detect" `
+  -F "file=@medicine.jpg"
+```
 
-![alt text](image-4.png)
+Responses contain base64 audio, text guidance, detection metadata, and optional medicine information.
 
-Note: The config.json file basically contain all the important parameters of project, if user want to change it, it can do accordingly without going to the code.
+## WebSocket API
 
+Connect to `ws://localhost:8766` and send:
 
-**Step 5:**
-Now we have to run the main.py
+```json
+{
+  "image": "<base64 image>",
+  "mode": "detection",
+  "send_time": 1710000000000
+}
+```
 
-1. Go to Service folder and right click on main.py and copy path (absolute path)
+Supported modes are `detection` and `Drug_detection`. The server sends periodic heartbeats. Live clients should send the newest frame; stale frames are dropped intentionally. The WebSocket message limit is 10 MB.
 
-2. Go to the terminal: write  python + (Your absolute path )
-   
-![alt text](image-5.png)
+## Streamlit Test Client
 
+The manual client is `Service/testing/testing.py`.
 
-After the service starts: It will appear like below format:
+```powershell
+pip install streamlit
+streamlit run Service/testing/testing.py
+```
 
-![alt text](image-6.png)
+It supports endpoint selection, timeouts, mode selection, JSON inspection, audio playback, and WAV download. Set `BLIND_API_URL` to provide a default endpoint.
+
+## Docker
+
+```powershell
+docker build -t blind-assistance-backend .
+docker run --gpus all -p 8888:8888 -p 8766:8766 blind-assistance-backend
+```
+
+For production GPU deployments, use an NVIDIA CUDA base image and provide model files and Ollama connectivity explicitly.
+
+## Validation
+
+```powershell
+python -m compileall -q Service
+```
+
+Add mocked model tests, API contract tests, WebSocket disconnect tests, and GPU/CPU load tests before production deployment.
+
+## Operational Notes
+
+- Inference is serialized through a shared semaphore to protect model state and GPU memory.
+- Blocking inference runs outside the async event loop.
+- Invalid images return client errors; internal details remain in server logs.
+- Add authentication, TLS, rate limiting, metrics, and health probes before exposing the service publicly.
+- Validate depth calibration and navigation behavior with real-world tests before safety-critical use.
+
+## Project Layout
+
+```text
+Service/
+├── api/                   REST routes
+├── base_models/           Abstract model interfaces
+├── common/                Shared helpers
+├── handler/               WebSocket handling
+├── model_service/         Inference orchestration
+├── models/                Detection, OCR, guidance, and TTS
+├── testing/               Streamlit test client
+├── config.json            Runtime configuration
+└── main.py                Application entry point
+```
+
+Review the licenses for YOLO, Depth Anything V2, EasyOCR, Ollama models, and downloaded checkpoints before redistribution or commercial deployment.
+
